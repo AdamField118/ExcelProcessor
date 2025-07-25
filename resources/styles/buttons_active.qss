@@ -1,0 +1,16 @@
+QPushButton#processButton:enabled {
+    background-color: #4CAF50;
+    color: white;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+QPushButton#processButton:enabled:hover {
+    background-color: #45a049;
+}
+
+QPushButton#processButton:enabled:pressed {
+    background-color: #3d8b40;
+}

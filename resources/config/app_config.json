@@ -1,0 +1,64 @@
+{
+  "application": {
+    "name": "Excel File Processor",
+    "version": "1.0.0"
+  },
+  "window": {
+    "title": "Excel File Processor",
+    "min_size": {
+      "width": 600,
+      "height": 500
+    }
+  },
+  "ui": {
+    "title": {
+      "text": "Excel File Processor",
+      "font_size": 16,
+      "bold": true
+    },
+    "labels": {
+      "input_files": "Input Files",
+      "configuration": "Configuration Values",
+      "output": "Output"
+    },
+    "input_fields": {
+      "labels": [
+        "Project Name:",
+        "Department:",
+        "Analyst:",
+        "Report Date:",
+        "Version:"
+      ]
+    },
+    "placeholders": {
+      "file_list": "Selected files will appear here...",
+      "project_name": "Enter project name...",
+      "department": "Enter department...",
+      "analyst": "Enter analyst name...",
+      "report_date": "Enter report date...",
+      "version": "Enter version..."
+    },
+    "output": {
+      "no_location_message": "No output location selected",
+      "button_text": "Choose Save Location"
+    },
+    "buttons": {
+      "process": {
+        "text": "Process Files",
+        "min_height": 40
+      }
+    },
+    "status_messages": {
+      "ready": "Ready - Select input files and configure settings",
+      "processing": "Processing files...",
+      "complete": "Processing complete!",
+      "failed": "Processing failed!"
+    }
+  },
+  "fonts": {
+    "main_label": {
+      "size": 12,
+      "bold": false
+    }
+  }
+}
