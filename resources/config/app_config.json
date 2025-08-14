@@ -1,0 +1,66 @@
+{
+  "application": {
+    "name": "Excel File Processor",
+    "version": "1.0.0"
+  },
+  "window": {
+    "title": "Excel File Processor",
+    "min_size": {
+      "width": 700,
+      "height": 600
+    }
+  },
+  "ui": {
+    "title": {
+      "text": "Excel File Processor",
+      "font_size": 18,
+      "bold": true
+    },
+    "labels": {
+      "input_files": "Input Files",
+      "configuration": "Part Information",
+      "output": "Output Location"
+    },
+    "input_fields": {
+      "labels": [
+        "Part Name:",
+        "Revision Number:",
+        "Lot Number:",
+        "Customer P/N:",
+        "Customer PO:",
+        "Measurement Units:"
+      ]
+    },
+    "placeholders": {
+      "file_list": "Selected files will appear here...",
+      "part_name": "Enter part name...",
+      "revision_number": "Enter revision number...",
+      "lot_number": "Enter lot number...",
+      "customer_pn": "Enter customer P/N...",
+      "customer_po": "Enter customer PO...",
+      "measurement_units": "Inches or Millimeters"
+    },
+    "output": {
+      "no_location_message": "No output location selected",
+      "button_text": "Choose Save Location"
+    },
+    "buttons": {
+      "process": {
+        "text": "Process Files",
+        "min_height": 45
+      }
+    },
+    "status_messages": {
+      "ready": "Ready - Select input files and configure settings",
+      "processing": "Processing files...",
+      "complete": "Processing complete!",
+      "failed": "Processing failed!"
+    }
+  },
+  "fonts": {
+    "main_label": {
+      "size": 12,
+      "bold": false
+    }
+  }
+}

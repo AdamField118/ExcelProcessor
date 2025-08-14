@@ -1,0 +1,86 @@
+/*
+Active Buttons Stylesheet - buttons_active.qss
+Special styling for active/enabled buttons (especially Process button)
+*/
+
+/* Process Button - Active/Enabled State */
+QPushButton#processButton:enabled {
+    border-style: outset;
+    border-width: 2px;
+    border-top-color: qlineargradient(spread:pad, x1:0.5, y1:0.6, x2:0.5, y2:0.4, stop:0 rgba(100, 200, 100, 255), stop:1 rgba(50, 150, 50, 255));
+    border-right-color: qlineargradient(spread:pad, x1:0.4, y1:0.5, x2:0.6, y2:0.5, stop:0 rgba(100, 200, 100, 255), stop:1 rgba(50, 150, 50, 255));
+    border-left-color: qlineargradient(spread:pad, x1:0.6, y1:0.5, x2:0.4, y2:0.5, stop:0 rgba(100, 200, 100, 255), stop:1 rgba(50, 150, 50, 255));
+    border-bottom-color: rgb(30, 120, 30);
+    border-bottom-width: 1px;
+    border-style: solid;
+    background-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgba(60, 140, 60, 255), stop:1 rgba(80, 160, 80, 255));
+    color: rgb(255, 255, 255);
+    font-weight: bold;
+    font-size: 10pt;
+    min-height: 35px;
+    border-radius: 6px;
+    padding: 8px 16px;
+}
+
+QPushButton#processButton:enabled:hover {
+    border-style: outset;
+    border-width: 2px;
+    border-top-color: qlineargradient(spread:pad, x1:0.5, y1:0.6, x2:0.5, y2:0.4, stop:0 rgba(120, 220, 120, 255), stop:1 rgba(70, 170, 70, 255));
+    border-right-color: qlineargradient(spread:pad, x1:0.4, y1:0.5, x2:0.6, y2:0.5, stop:0 rgba(120, 220, 120, 255), stop:1 rgba(70, 170, 70, 255));
+    border-left-color: qlineargradient(spread:pad, x1:0.6, y1:0.5, x2:0.4, y2:0.5, stop:0 rgba(120, 220, 120, 255), stop:1 rgba(70, 170, 70, 255));
+    border-bottom-color: rgb(50, 140, 50);
+    border-bottom-width: 1px;
+    border-style: solid;
+    background-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgba(70, 160, 70, 255), stop:1 rgba(90, 180, 90, 255));
+    color: rgb(255, 255, 255);
+    font-weight: bold;
+    font-size: 10pt;
+    min-height: 35px;
+    border-radius: 6px;
+    padding: 8px 16px;
+}
+
+QPushButton#processButton:enabled:pressed {
+    border-style: outset;
+    border-width: 2px;
+    border-top-color: qlineargradient(spread:pad, x1:0.5, y1:0.6, x2:0.5, y2:0.4, stop:0 rgba(40, 120, 40, 255), stop:1 rgba(20, 80, 20, 255));
+    border-right-color: qlineargradient(spread:pad, x1:0.4, y1:0.5, x2:0.6, y2:0.5, stop:0 rgba(80, 160, 80, 255), stop:1 rgba(40, 120, 40, 255));
+    border-left-color: qlineargradient(spread:pad, x1:0.6, y1:0.5, x2:0.4, y2:0.5, stop:0 rgba(80, 160, 80, 255), stop:1 rgba(40, 120, 40, 255));
+    border-bottom-color: rgb(20, 100, 20);
+    border-bottom-width: 1px;
+    border-style: solid;
+    background-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgba(50, 130, 50, 255), stop:1 rgba(70, 150, 70, 255));
+    color: rgb(255, 255, 255);
+    font-weight: bold;
+    font-size: 10pt;
+    min-height: 35px;
+    border-radius: 6px;
+    padding: 8px 16px;
+}
+
+/* Active Save Button Styling */
+QPushButton#saveAsButton:enabled {
+    border-style: outset;
+    border-width: 2px;
+    border-top-color: qlineargradient(spread:pad, x1:0.5, y1:0.6, x2:0.5, y2:0.4, stop:0 rgba(255, 180, 50, 255), stop:1 rgba(200, 120, 0, 255));
+    border-right-color: qlineargradient(spread:pad, x1:0.4, y1:0.5, x2:0.6, y2:0.5, stop:0 rgba(255, 180, 50, 255), stop:1 rgba(200, 120, 0, 255));
+    border-left-color: qlineargradient(spread:pad, x1:0.6, y1:0.5, x2:0.4, y2:0.5, stop:0 rgba(255, 180, 50, 255), stop:1 rgba(200, 120, 0, 255));
+    border-bottom-color: rgb(150, 90, 0);
+    border-bottom-width: 1px;
+    border-style: solid;
+    background-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgba(200, 120, 0, 255), stop:1 rgba(255, 153, 0, 255));
+    color: rgb(0, 0, 0);
+    font-weight: bold;
+    border-radius: 6px;
+    padding: 8px 16px;
+}
+
+QPushButton#saveAsButton:enabled:hover {
+    background-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgba(220, 140, 20, 255), stop:1 rgba(255, 173, 20, 255));
+    border-top-color: qlineargradient(spread:pad, x1:0.5, y1:0.6, x2:0.5, y2:0.4, stop:0 rgba(255, 200, 70, 255), stop:1 rgba(220, 140, 20, 255));
+}
+
+/* General active button state for other buttons */
+QPushButton:enabled:focus {
+    border-color: rgb(255, 153, 0);
+}

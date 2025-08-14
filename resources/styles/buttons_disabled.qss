@@ -1,0 +1,56 @@
+/*
+Disabled Buttons Stylesheet - buttons_disabled.qss
+Styling for disabled/inactive buttons
+*/
+
+/* Process Button - Disabled State */
+QPushButton#processButton:disabled {
+    border-style: outset;
+    border-width: 2px;
+    border-top-color: qlineargradient(spread:pad, x1:0.5, y1:0.6, x2:0.5, y2:0.4, stop:0 rgba(115, 115, 115, 255), stop:1 rgba(62, 62, 62, 255));
+    border-right-color: qlineargradient(spread:pad, x1:0.4, y1:0.5, x2:0.6, y2:0.5, stop:0 rgba(115, 115, 115, 255), stop:1 rgba(62, 62, 62, 255));
+    border-left-color: qlineargradient(spread:pad, x1:0.6, y1:0.5, x2:0.4, y2:0.5, stop:0 rgba(115, 115, 115, 255), stop:1 rgba(62, 62, 62, 255));
+    border-bottom-color: rgb(58, 58, 58);
+    border-bottom-width: 1px;
+    border-style: solid;
+    color: rgb(80, 80, 80);
+    padding: 8px 16px;
+    background-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgba(40, 40, 40, 255), stop:1 rgba(60, 60, 60, 255));
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 10pt;
+    min-height: 35px;
+}
+
+/* Save Button - Disabled State */
+QPushButton#saveAsButton:disabled {
+    border-style: outset;
+    border-width: 2px;
+    border-top-color: qlineargradient(spread:pad, x1:0.5, y1:0.6, x2:0.5, y2:0.4, stop:0 rgba(115, 115, 115, 255), stop:1 rgba(62, 62, 62, 255));
+    border-right-color: qlineargradient(spread:pad, x1:0.4, y1:0.5, x2:0.6, y2:0.5, stop:0 rgba(115, 115, 115, 255), stop:1 rgba(62, 62, 62, 255));
+    border-left-color: qlineargradient(spread:pad, x1:0.6, y1:0.5, x2:0.4, y2:0.5, stop:0 rgba(115, 115, 115, 255), stop:1 rgba(62, 62, 62, 255));
+    border-bottom-color: rgb(58, 58, 58);
+    border-bottom-width: 1px;
+    border-style: solid;
+    color: rgb(80, 80, 80);
+    padding: 8px 16px;
+    background-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgba(40, 40, 40, 255), stop:1 rgba(60, 60, 60, 255));
+    border-radius: 6px;
+    font-weight: normal;
+}
+
+/* General disabled button state */
+QPushButton:disabled {
+    border-style: outset;
+    border-width: 2px;
+    border-top-color: qlineargradient(spread:pad, x1:0.5, y1:0.6, x2:0.5, y2:0.4, stop:0 rgba(115, 115, 115, 255), stop:1 rgba(62, 62, 62, 255));
+    border-right-color: qlineargradient(spread:pad, x1:0.4, y1:0.5, x2:0.6, y2:0.5, stop:0 rgba(115, 115, 115, 255), stop:1 rgba(62, 62, 62, 255));
+    border-left-color: qlineargradient(spread:pad, x1:0.6, y1:0.5, x2:0.4, y2:0.5, stop:0 rgba(115, 115, 115, 255), stop:1 rgba(62, 62, 62, 255));
+    border-bottom-color: rgb(58, 58, 58);
+    border-bottom-width: 1px;
+    border-style: solid;
+    color: rgb(80, 80, 80);
+    padding: 6px 12px;
+    background-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgba(40, 40, 40, 255), stop:1 rgba(60, 60, 60, 255));
+    border-radius: 6px;
+}

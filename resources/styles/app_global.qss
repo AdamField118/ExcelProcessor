@@ -1,0 +1,92 @@
+/*
+Global Application Stylesheet - app_global.qss
+Dark Console Theme for Excel File Processor
+*/
+
+/* Global Application Styles */
+QApplication {
+    background-color: rgb(0, 0, 0);
+    color: rgb(240, 240, 240);
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 9pt;
+}
+
+QWidget {
+    background-color: rgb(0, 0, 0);
+    color: rgb(240, 240, 240);
+    border-color: rgb(58, 58, 58);
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 9pt;
+}
+
+/* Global Label Styles */
+QLabel {
+    color: rgb(240, 240, 240);
+    background-color: transparent;
+    border: none;
+    padding: 2px;
+}
+
+/* Global Selection Colors */
+*::selection {
+    background-color: rgb(255, 153, 0);
+    color: rgb(0, 0, 0);
+}
+
+/* Focus Styling */
+*:focus {
+    outline: none;
+}
+
+/* Tooltips */
+QToolTip {
+    background-color: rgb(50, 50, 50);
+    color: rgb(255, 255, 255);
+    border: 1px solid rgb(255, 153, 0);
+    border-radius: 4px;
+    padding: 6px;
+    font-size: 8pt;
+}
+
+/* Scrollbars */
+QScrollBar:vertical {
+    background-color: rgb(40, 40, 40);
+    width: 12px;
+    border-radius: 6px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: rgb(80, 80, 80);
+    border-radius: 6px;
+    min-height: 20px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: rgb(100, 100, 100);
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QScrollBar:horizontal {
+    background-color: rgb(40, 40, 40);
+    height: 12px;
+    border-radius: 6px;
+}
+
+QScrollBar::handle:horizontal {
+    background-color: rgb(80, 80, 80);
+    border-radius: 6px;
+    min-width: 20px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background-color: rgb(100, 100, 100);
+}
+
+QScrollBar::add-line:horizontal,
+QScrollBar::sub-line:horizontal {
+    width: 0px;
+}

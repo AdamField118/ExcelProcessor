@@ -1,0 +1,50 @@
+/*
+Active File Drop Area Stylesheet - drop_area_active.qss
+Styles for when files are being dragged over the drop area
+*/
+
+/* File Drop Area - Active Drag State */
+FileDropArea {
+    border-color: rgb(255, 153, 0);
+    border-width: 3px;
+    border-style: dashed;
+    border-radius: 12px;
+    background-color: rgb(40, 30, 0);
+    color: rgb(255, 255, 255);
+    padding: 10px;
+}
+
+/* Labels during drag */
+FileDropArea QLabel {
+    background-color: transparent;
+    color: rgb(255, 255, 255);
+    font-size: 11pt;
+    font-weight: bold;
+    border: none;
+}
+
+/* Button during drag */
+FileDropArea QPushButton {
+    border-style: outset;
+    border-width: 2px;
+    border-color: rgb(255, 153, 0);
+    color: rgb(255, 255, 255);
+    padding: 6px 12px;
+    background-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgba(150, 100, 0, 255), stop:1 rgba(200, 130, 0, 255));
+    border-radius: 6px;
+    font-weight: bold;
+    min-width: 100px;
+    margin: 5px;
+}
+
+/* Text area during drag */
+FileDropArea QTextEdit {
+    background-color: rgb(40, 30, 0);
+    color: rgb(255, 255, 255);
+    border: 2px solid rgb(255, 153, 0);
+    border-radius: 4px;
+    padding: 6px;
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 8pt;
+    margin: 5px 0px;
+}

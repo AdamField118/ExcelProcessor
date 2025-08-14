@@ -1,0 +1,4 @@
+-r requirements.txt
+pytest>=6.0.0
+pyinstaller>=4.5.0
+black>=21.0.0
