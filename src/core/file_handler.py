@@ -424,6 +424,23 @@ class FileHandler:
         # Try different encodings commonly used for CSV files
         encodings_to_try = ['utf-8', 'utf-8-sig', 'latin1', 'cp1252', 'iso-8859-1']
         
+        def _is_first_column_numeric(df):
+            """Check if the first column contains only numeric values"""
+            if df.empty or len(df.columns) == 0:
+                return False
+            
+            first_col = df.iloc[:, 0].dropna()
+            
+            if len(first_col) == 0:
+                return False
+            
+            # Try to convert all values to numeric
+            try:
+                pd.to_numeric(first_col, errors='raise')
+                return True
+            except (ValueError, TypeError):
+                return False
+        
         for encoding in encodings_to_try:
             try:
                 logger.info(f"Trying to load CSV with encoding: {encoding}")
@@ -436,8 +453,13 @@ class FileHandler:
                     dtype=str  # Load everything as strings initially
                 )
 
-                result = result.drop(result.columns[0], axis=1)
-                result.columns = range(len(result.columns))
+                # Only drop the first column if it appears to be numeric (like an index)
+                if _is_first_column_numeric(result):
+                    logger.info("First column appears to be numeric index, removing it")
+                    result = result.drop(result.columns[0], axis=1)
+                    result.columns = range(len(result.columns))
+                else:
+                    logger.info("First column contains non-numeric data, keeping it")
 
                 logger.info(f"Successfully loaded CSV with encoding: {encoding}, shape: {result.shape}")
                 result.attrs['source_file'] = os.path.basename(file_path)
