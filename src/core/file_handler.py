@@ -148,25 +148,51 @@ class FileHandler:
         sheet_name = f'PO{customer_po} Qty {total_parts}'
         sheet.title = sheet_name
         
-        sheet['C1'] = input_strings.get('part_name', '')
-        sheet['C2'] = input_strings.get('revision_number', '')
-        sheet['C3'] = input_strings.get('lot_number', '')
-        sheet['C4'] = input_strings.get('customer_p/n', '')
-        sheet['C5'] = customer_po
-        sheet['C6'] = input_strings.get('measurement_units', '')
+        sheet['B1'] = input_strings.get('part_name', '')
+        sheet['B2'] = input_strings.get('revision_number', '')
+        sheet['B3'] = input_strings.get('lot_number', '')
+        sheet['B4'] = input_strings.get('customer_p/n', '')
+        sheet['B5'] = customer_po
+        sheet['B6'] = input_strings.get('measurement_units', '')
         
         workbook.save(output_path)
         workbook.close()
     
     @staticmethod
+    def extract_serial_number_from_b5(df):
+        """
+        Extract serial number from B5 position (DataFrame index [4, 2])
+        B5 corresponds to DataFrame row 4 (Excel row 5 - 1) and column 2 (Excel column C - 1)
+        Note: After first column is popped, what was originally C5 is now at [4, 2]
+        """
+        try:
+            if str(df.iloc[4, 2]) != "nan":
+                serial_value = df.iloc[4, 2]
+            else: 
+                serial_value = str(df.iloc[9, 1]).split(':')[1]
+            
+            if pd.notna(serial_value) and str(serial_value).strip():
+                serial_number = str(serial_value).strip()
+                logger.info(f"Found serial number at B5: {serial_number}")
+                return serial_number
+            else:
+                logger.warning("Serial number at B5 is empty or NaN")
+                return ""
+                
+        except (IndexError, KeyError):
+            logger.warning("Could not access B5 position for serial number")
+            return ""
+    
+    @staticmethod
     def find_header_loc1_positions(data):
         """
         Find only HEADER LOC1 positions (not data LOC1) in DataFrame(s)
+        Also extracts serial numbers from B5 for each DataFrame
         
         Header LOC1 instances are identified by having 'UNITS' in the adjacent column
         These are the reference points for measurement extraction logic
         
-        Returns dictionary with part info including which DataFrame contains each part
+        Returns dictionary with part info including which DataFrame contains each part and serial numbers
         """
         if isinstance(data, list):
             all_positions = {}
@@ -174,7 +200,11 @@ class FileHandler:
             
             for df_idx, df in enumerate(data):
                 logger.info(f"Scanning DataFrame {df_idx + 1}/{len(data)} for header LOC1...")
-                df_positions = FileHandler._find_header_loc1_in_single_df(df, part_counter, df_idx)
+                
+                # Extract serial number from B5 for this DataFrame
+                serial_number = FileHandler.extract_serial_number_from_b5(df)
+                
+                df_positions = FileHandler._find_header_loc1_in_single_df(df, part_counter, df_idx, serial_number)
                 all_positions.update(df_positions)
                 part_counter += len(df_positions)
                 logger.info(f"Found {len(df_positions)} header LOC1 positions in DataFrame {df_idx + 1}")
@@ -182,10 +212,11 @@ class FileHandler:
             logger.info(f"Total header LOC1 positions found: {len(all_positions)}")
             return all_positions
         else:
-            return FileHandler._find_header_loc1_in_single_df(data, 1, 0)
+            serial_number = FileHandler.extract_serial_number_from_b5(data)
+            return FileHandler._find_header_loc1_in_single_df(data, 1, 0, serial_number)
     
     @staticmethod
-    def _find_header_loc1_in_single_df(df, start_counter, df_index):
+    def _find_header_loc1_in_single_df(df, start_counter, df_index, serial_number=""):
         """
         Helper function to find HEADER LOC1 positions in a single DataFrame
         
@@ -195,7 +226,7 @@ class FileHandler:
         - Index 1: LOC1 data (original Excel column B) 
         - Index 2: UNITS data (original Excel column C)
         
-        Returns dictionary with part info including DataFrame index
+        Returns dictionary with part info including DataFrame index and serial number
         """
         positions = {}
         part_counter = start_counter
@@ -218,13 +249,14 @@ class FileHandler:
                             excel_row = row_idx + 2
                             excel_ref = f'{excel_col}{excel_row}'
                             
-                            # Store both position and DataFrame index
+                            # Store position, DataFrame index, and serial number
                             positions[f'part-{part_counter}'] = {
                                 'position': excel_ref,
-                                'df_index': df_index
+                                'df_index': df_index,
+                                'serial_number': serial_number
                             }
                             part_counter += 1
-                            logger.debug(f"Found header LOC1 at {excel_ref} with UNITS at index 2 in DataFrame {df_index}")
+                            logger.debug(f"Found header LOC1 at {excel_ref} with UNITS at index 2 in DataFrame {df_index}, serial: {serial_number}")
                         else:
                             logger.debug(f"Skipping data LOC1 at row {row_idx + 2} with index 2 value: '{units_value}'")
                             
@@ -295,22 +327,36 @@ class FileHandler:
             return ""
     
     @staticmethod
-    def extract_all_measurements_for_part(df, part_positions_dict, part_name):
-        """Extract all measurements for a part in one pass"""
+    def extract_all_measurements_for_part(df, part_positions_dict, part_name, is_first_part=False):
+        """Extract all measurements for a part in one pass - now includes serial number as first column"""
         measurements = {}
         
-        # Base extractions for all parts
+        # Get serial number for this part
+        part_info = part_positions_dict[part_name]
+        serial_number = part_info.get('serial_number', '') if isinstance(part_info, dict) else ''
+        
+        # Add serial number as column A
+        measurements['A'] = serial_number
+        
+        # Base extractions for all parts (shifted right by 1 due to serial number)
+        # For the first part only, include K, L, M (5 over 2 down, 7 over 2 down, 8 over 2 down)
         base_extractions = [
-            ('A', 6, 2),    ('B', 10, 2),   ('C', 11, 2),
-            ('D', 6, 10),   ('E', 10, 10),  ('F', 11, 10),
-            ('G', 6, 14),   ('H', 10, 14),  ('I', 11, 14),
-            ('J', 5, 2),    ('K', 7, 2),    ('L', 8, 2),
+            ('B', 6, 2),    ('C', 10, 2),   ('D', 11, 2),
+            ('E', 6, 10),   ('F', 10, 10),  ('G', 11, 10),
+            ('H', 6, 14),   ('I', 10, 14),  ('J', 11, 14),
         ]
         
-        # Part-1 specific extractions (only for part-1)
+        # Only include K, L, M for the first part to avoid repetition
+        if is_first_part:
+            base_extractions.extend([
+                ('K', 5, 2),    ('L', 7, 2),    ('M', 8, 2),
+            ])
+        
+        # Part-1 specific extractions (only for part-1) - also shifted right
+        # Original columns O,P,Q,T,U -> now P,Q,R,U,V
         part1_extractions = [
-            ('O', 5, 10),   ('P', 7, 10),   ('Q', 8, 10),
-            ('T', 5, 14),   ('U', 7, 14),
+            ('P', 5, 10),   ('Q', 7, 10),   ('R', 8, 10),
+            ('U', 5, 14),   ('V', 7, 14),
         ]
         
         # Extract base measurements for all parts
@@ -334,31 +380,31 @@ class FileHandler:
             val_5_14 = FileHandler.extract_value(df, part_positions_dict, part_name, 5, 14)
             val_7_14 = FileHandler.extract_value(df, part_positions_dict, part_name, 7, 14)
             
-            # Calculate derived values (only for part-1) and truncate results
+            # Calculate derived values (only for part-1) and truncate results (shifted right by 1)
             if isinstance(val_5_2, (int, float)) and isinstance(val_7_2, (int, float)):
-                measurements['M'] = FileHandler.truncate_to_three_decimals(val_5_2 + val_7_2)
-            else:
-                measurements['M'] = ""
-            
-            if isinstance(val_5_2, (int, float)) and isinstance(val_8_2, (int, float)):
-                measurements['N'] = FileHandler.truncate_to_three_decimals(val_5_2 - val_8_2)
+                measurements['N'] = FileHandler.truncate_to_three_decimals(val_5_2 + val_7_2)
             else:
                 measurements['N'] = ""
             
-            if isinstance(val_5_10, (int, float)) and isinstance(val_7_10, (int, float)):
-                measurements['R'] = FileHandler.truncate_to_three_decimals(val_5_10 + val_7_10)
+            if isinstance(val_5_2, (int, float)) and isinstance(val_8_2, (int, float)):
+                measurements['O'] = FileHandler.truncate_to_three_decimals(val_5_2 - val_8_2)
             else:
-                measurements['R'] = ""
+                measurements['O'] = ""
             
-            if isinstance(val_5_10, (int, float)) and isinstance(val_8_10, (int, float)):
-                measurements['S'] = FileHandler.truncate_to_three_decimals(val_5_10 - val_8_10)
+            if isinstance(val_5_10, (int, float)) and isinstance(val_7_10, (int, float)):
+                measurements['S'] = FileHandler.truncate_to_three_decimals(val_5_10 + val_7_10)
             else:
                 measurements['S'] = ""
             
-            if isinstance(val_5_14, (int, float)) and isinstance(val_7_14, (int, float)):
-                measurements['V'] = FileHandler.truncate_to_three_decimals(val_5_14 + val_7_14)
+            if isinstance(val_5_10, (int, float)) and isinstance(val_8_10, (int, float)):
+                measurements['T'] = FileHandler.truncate_to_three_decimals(val_5_10 - val_8_10)
             else:
-                measurements['V'] = ""
+                measurements['T'] = ""
+            
+            if isinstance(val_5_14, (int, float)) and isinstance(val_7_14, (int, float)):
+                measurements['W'] = FileHandler.truncate_to_three_decimals(val_5_14 + val_7_14)
+            else:
+                measurements['W'] = ""
         
         return measurements
     
@@ -372,7 +418,7 @@ class FileHandler:
                 sheet[f'{col_letter}{row_str}'] = value
     
     @staticmethod
-    def process_part(data, part_positions_dict, part_name, workbook, start_row):
+    def process_part(data, part_positions_dict, part_name, workbook, start_row, is_first_part=False):
         """
         Process measurements for a part from the specific DataFrame where it was found
         Returns the next available row number
@@ -397,7 +443,7 @@ class FileHandler:
             df = data[df_index]
             
             # Extract measurements from the correct DataFrame
-            measurements = FileHandler.extract_all_measurements_for_part(df, part_positions_dict, part_name)
+            measurements = FileHandler.extract_all_measurements_for_part(df, part_positions_dict, part_name, is_first_part)
             
             # Write to all sheets
             for sheet in workbook.worksheets:
@@ -499,11 +545,14 @@ def main(data, output_path, progress_callback=None):
             current_row = 9
             processed_parts = 0
             
-            for part_name in part_position_dict.keys():
+            for i, part_name in enumerate(part_position_dict.keys()):
                 logger.info(f"Processing {part_name}... ({processed_parts + 1}/{total_parts})")
                 
+                # Only include K, L, M for the very first part
+                is_first_part = (i == 0)
+                
                 current_row = FileHandler.process_part(
-                    data, part_position_dict, part_name, workbook, current_row
+                    data, part_position_dict, part_name, workbook, current_row, is_first_part
                 )
                 
                 processed_parts += 1
