@@ -78,6 +78,236 @@ class FileHandler:
             return str(value)
     
     @staticmethod
+    def is_new_format(df):
+        """
+        Detect if DataFrame is in new format by checking if column A (index 0) contains
+        only 'Design value', 'Upper Limit', and 'Lower Limit' (exactly one of each).
+        This check is done AFTER any numerical first column has been popped.
+        """
+        if df.empty or len(df.columns) == 0:
+            return False
+        
+        try:
+            # Get first column (index 0) as strings, drop NaN/empty
+            first_col = df.iloc[:, 0].astype(str).str.strip()
+            # Filter out empty strings and 'nan' strings
+            non_empty = first_col[(first_col != '') & (first_col != 'nan')].tolist()
+            
+            if len(non_empty) != 3:
+                return False
+            
+            # Check if we have exactly one of each required value
+            required_values = {'Design value', 'Upper Limit', 'Lower Limit'}
+            return set(non_empty) == required_values
+            
+        except Exception as e:
+            logger.error(f"Error checking new format: {e}")
+            return False
+    
+    @staticmethod
+    def extract_new_format_reference_values(df):
+        """
+        Extract reference values from new format file for first part only.
+        Returns dict with nominal values and tolerances.
+        """
+        reference_values = {}
+        
+        # Find rows for each reference type
+        first_col = df.iloc[:, 0].astype(str).str.strip()
+        
+        design_row = None
+        upper_row = None
+        lower_row = None
+        
+        for idx, val in first_col.items():
+            if val == 'Design value':
+                design_row = idx
+            elif val == 'Upper Limit':
+                upper_row = idx
+            elif val == 'Lower Limit':
+                lower_row = idx
+        
+        if design_row is None:
+            raise ValueError("Could not find 'Design value' row in new format")
+        
+        # Extract values from columns G, H, I (indices 6, 7, 8)
+        # Column G values → K, L, M
+        reference_values['K'] = df.iloc[design_row, 6] if design_row is not None and len(df.columns) > 6 else ""
+        reference_values['L'] = df.iloc[upper_row, 6] if upper_row is not None and len(df.columns) > 6 else ""
+        reference_values['M'] = df.iloc[lower_row, 6] if lower_row is not None and len(df.columns) > 6 else ""
+        
+        # Column H values → U, V, (W is blank)
+        reference_values['U'] = df.iloc[design_row, 7] if design_row is not None and len(df.columns) > 7 else ""
+        reference_values['V'] = df.iloc[upper_row, 7] if upper_row is not None and len(df.columns) > 7 else ""
+        reference_values['W'] = ""
+        
+        # Column I values → P, Q, R
+        reference_values['P'] = df.iloc[design_row, 8] if design_row is not None and len(df.columns) > 8 else ""
+        reference_values['Q'] = df.iloc[upper_row, 8] if upper_row is not None and len(df.columns) > 8 else ""
+        reference_values['R'] = df.iloc[lower_row, 8] if lower_row is not None and len(df.columns) > 8 else ""
+        
+        # Store nominal values for calculations (as floats)
+        try:
+            reference_values['nominal_G'] = float(df.iloc[design_row, 6]) if design_row is not None and len(df.columns) > 6 and pd.notna(df.iloc[design_row, 6]) else 0
+        except (ValueError, TypeError):
+            reference_values['nominal_G'] = 0
+            
+        try:
+            reference_values['nominal_H'] = float(df.iloc[design_row, 7]) if design_row is not None and len(df.columns) > 7 and pd.notna(df.iloc[design_row, 7]) else 0
+        except (ValueError, TypeError):
+            reference_values['nominal_H'] = 0
+            
+        try:
+            reference_values['nominal_I'] = float(df.iloc[design_row, 8]) if design_row is not None and len(df.columns) > 8 and pd.notna(df.iloc[design_row, 8]) else 0
+        except (ValueError, TypeError):
+            reference_values['nominal_I'] = 0
+        
+        logger.info(f"Extracted reference values: K={reference_values['K']}, L={reference_values['L']}, M={reference_values['M']}")
+        logger.info(f"Nominal values: G={reference_values['nominal_G']}, H={reference_values['nominal_H']}, I={reference_values['nominal_I']}")
+        
+        return reference_values
+    
+    @staticmethod
+    def find_ok_positions_new_format(df, start_counter, df_index, reference_values):
+        """
+        Find all 'OK' positions in column E (index 4) for new format.
+        Returns dict with part info similar to old format.
+        """
+        positions = {}
+        part_counter = start_counter
+        
+        if len(df.columns) <= 4:
+            logger.warning("DataFrame doesn't have enough columns for new format")
+            return positions
+        
+        col_e = df.iloc[:, 4].astype(str).str.strip()
+        
+        for idx, val in col_e.items():
+            if val == 'OK':
+                positions[f'part-{part_counter}'] = {
+                    'row_index': idx,  # Row where OK was found
+                    'df_index': df_index,
+                    'format': 'new',
+                    'reference_values': reference_values
+                }
+                part_counter += 1
+                logger.debug(f"Found OK at row {idx} in DataFrame {df_index}")
+        
+        logger.info(f"Found {len(positions)} OK positions in new format file")
+        return positions
+    
+    @staticmethod
+    def extract_measurements_new_format(df, part_info, is_first_part=False):
+        """
+        Extract measurements for a part in new format.
+        part_info: dict containing row_index, reference_values, etc.
+        """
+        measurements = {}
+        ok_row = part_info['row_index']
+        reference_values = part_info['reference_values']
+        
+        # Column A: Lot Number (2 columns to the left of OK, which is at index 4)
+        # So index 4 - 2 = index 2
+        try:
+            lot_number = df.iloc[ok_row, 2] if len(df.columns) > 2 else ""
+            measurements['A'] = str(lot_number).strip() if pd.notna(lot_number) else ""
+        except (IndexError, KeyError):
+            measurements['A'] = ""
+        
+        # Get nominal values
+        nominal_G = reference_values['nominal_G']
+        nominal_H = reference_values['nominal_H']
+        nominal_I = reference_values['nominal_I']
+        
+        # Column B: 2 columns to the right of OK (index 4 + 2 = index 6)
+        try:
+            actual_B_raw = df.iloc[ok_row, 6] if len(df.columns) > 6 else ""
+            measurements['B'] = FileHandler.truncate_to_three_decimals(actual_B_raw)
+            
+            # Column C: truncated_B - nominal_G (use truncated value for calculation)
+            if pd.notna(actual_B_raw) and actual_B_raw != "":
+                try:
+                    # Convert truncated string back to float for calculation
+                    actual_B_truncated = float(measurements['B'])
+                    measurements['C'] = FileHandler.truncate_to_three_decimals(actual_B_truncated - nominal_G)
+                except (ValueError, TypeError):
+                    measurements['C'] = ""
+            else:
+                measurements['C'] = ""
+        except (IndexError, KeyError):
+            measurements['B'] = ""
+            measurements['C'] = ""
+        
+        # Column D: 0.000
+        measurements['D'] = "0.000"
+        
+        # Column E: 4 columns to the right of OK (index 4 + 4 = index 8)
+        try:
+            actual_E_raw = df.iloc[ok_row, 8] if len(df.columns) > 8 else ""
+            measurements['E'] = FileHandler.truncate_to_three_decimals(actual_E_raw)
+            
+            # Column F: truncated_E - nominal_I (use truncated value for calculation)
+            if pd.notna(actual_E_raw) and actual_E_raw != "":
+                try:
+                    # Convert truncated string back to float for calculation
+                    actual_E_truncated = float(measurements['E'])
+                    measurements['F'] = FileHandler.truncate_to_three_decimals(actual_E_truncated - nominal_I)
+                except (ValueError, TypeError):
+                    measurements['F'] = ""
+            else:
+                measurements['F'] = ""
+        except (IndexError, KeyError):
+            measurements['E'] = ""
+            measurements['F'] = ""
+        
+        # Column G: 0.000
+        measurements['G'] = "0.000"
+        
+        # Column H: 3 columns to the right of OK (index 4 + 3 = index 7)
+        try:
+            actual_H_raw = df.iloc[ok_row, 7] if len(df.columns) > 7 else ""
+            measurements['H'] = FileHandler.truncate_to_three_decimals(actual_H_raw)
+            
+            # Column I: truncated_H - nominal_H (use truncated value for calculation)
+            if pd.notna(actual_H_raw) and actual_H_raw != "":
+                try:
+                    # Convert truncated string back to float for calculation
+                    actual_H_truncated = float(measurements['H'])
+                    measurements['I'] = FileHandler.truncate_to_three_decimals(actual_H_truncated - nominal_H)
+                except (ValueError, TypeError):
+                    measurements['I'] = ""
+            else:
+                measurements['I'] = ""
+        except (IndexError, KeyError):
+            measurements['H'] = ""
+            measurements['I'] = ""
+        
+        # Column J: 0.000
+        measurements['J'] = "0.000"
+        
+        # Add reference values only for first part across ALL files
+        if is_first_part:
+            measurements['K'] = FileHandler.truncate_to_three_decimals(reference_values['K'])
+            measurements['L'] = FileHandler.truncate_to_three_decimals(reference_values['L'])
+            measurements['M'] = FileHandler.truncate_to_three_decimals(reference_values['M'])
+            measurements['P'] = FileHandler.truncate_to_three_decimals(reference_values['P'])
+            measurements['Q'] = FileHandler.truncate_to_three_decimals(reference_values['Q'])
+            measurements['R'] = FileHandler.truncate_to_three_decimals(reference_values['R'])
+            measurements['U'] = FileHandler.truncate_to_three_decimals(reference_values['U'])
+            measurements['V'] = FileHandler.truncate_to_three_decimals(reference_values['V'])
+            measurements['W'] = ""  # Always blank
+        
+        # N, O, S, T should be blank for new format
+        measurements['N'] = ""
+        measurements['O'] = ""
+        measurements['S'] = ""
+        measurements['T'] = ""
+        if not is_first_part:
+            measurements['W'] = ""
+        
+        return measurements
+    
+    @staticmethod
     def load_excel_file(file_path):
         """Load Excel file into DataFrame"""
         logger.info(f"Loading: {os.path.basename(file_path)}")
@@ -140,8 +370,8 @@ class FileHandler:
         
         customer_po = input_strings.get('customer_po', '')
         
-        # Count parts correctly
-        part_position_dict = FileHandler.find_header_loc1_positions(data)
+        # Count parts correctly (works for both formats)
+        part_position_dict = FileHandler.find_all_parts(data)
         total_parts = len(part_position_dict)
         
         sheet = workbook.active
@@ -184,36 +414,69 @@ class FileHandler:
             return ""
     
     @staticmethod
-    def find_header_loc1_positions(data):
+    def find_all_parts(data):
         """
-        Find only HEADER LOC1 positions (not data LOC1) in DataFrame(s)
-        Also extracts serial numbers from B5 for each DataFrame
-        
-        Header LOC1 instances are identified by having 'UNITS' in the adjacent column
-        These are the reference points for measurement extraction logic
-        
-        Returns dictionary with part info including which DataFrame contains each part and serial numbers
+        Find all parts in data, detecting format per file.
+        Supports both old format (LOC1-based) and new format (OK-based).
         """
         if isinstance(data, list):
             all_positions = {}
             part_counter = 1
+            is_very_first_part = True
             
             for df_idx, df in enumerate(data):
-                logger.info(f"Scanning DataFrame {df_idx + 1}/{len(data)} for header LOC1...")
+                logger.info(f"Scanning DataFrame {df_idx + 1}/{len(data)}...")
                 
-                # Extract serial number from B5 for this DataFrame
-                serial_number = FileHandler.extract_serial_number_from_b5(df)
+                # Detect format for this DataFrame
+                if FileHandler.is_new_format(df):
+                    logger.info(f"DataFrame {df_idx + 1} detected as NEW FORMAT")
+                    # Extract reference values for new format
+                    reference_values = FileHandler.extract_new_format_reference_values(df)
+                    # Find all OK positions
+                    df_positions = FileHandler.find_ok_positions_new_format(df, part_counter, df_idx, reference_values)
+                else:
+                    logger.info(f"DataFrame {df_idx + 1} detected as OLD FORMAT")
+                    # Process as old format (existing logic)
+                    serial_number = FileHandler.extract_serial_number_from_b5(df)
+                    df_positions = FileHandler._find_header_loc1_in_single_df(df, part_counter, df_idx, serial_number)
                 
-                df_positions = FileHandler._find_header_loc1_in_single_df(df, part_counter, df_idx, serial_number)
+                # Mark the very first part
+                if is_very_first_part and len(df_positions) > 0:
+                    first_part_key = list(df_positions.keys())[0]
+                    df_positions[first_part_key]['is_very_first'] = True
+                    is_very_first_part = False
+                
                 all_positions.update(df_positions)
                 part_counter += len(df_positions)
-                logger.info(f"Found {len(df_positions)} header LOC1 positions in DataFrame {df_idx + 1}")
+                logger.info(f"Found {len(df_positions)} parts in DataFrame {df_idx + 1}")
             
-            logger.info(f"Total header LOC1 positions found: {len(all_positions)}")
+            logger.info(f"Total parts found across all files: {len(all_positions)}")
             return all_positions
         else:
-            serial_number = FileHandler.extract_serial_number_from_b5(data)
-            return FileHandler._find_header_loc1_in_single_df(data, 1, 0, serial_number)
+            # Single DataFrame
+            if FileHandler.is_new_format(data):
+                logger.info("Single DataFrame detected as NEW FORMAT")
+                reference_values = FileHandler.extract_new_format_reference_values(data)
+                positions = FileHandler.find_ok_positions_new_format(data, 1, 0, reference_values)
+            else:
+                logger.info("Single DataFrame detected as OLD FORMAT")
+                serial_number = FileHandler.extract_serial_number_from_b5(data)
+                positions = FileHandler._find_header_loc1_in_single_df(data, 1, 0, serial_number)
+            
+            # Mark first part
+            if len(positions) > 0:
+                first_part_key = list(positions.keys())[0]
+                positions[first_part_key]['is_very_first'] = True
+            
+            return positions
+    
+    @staticmethod
+    def find_header_loc1_positions(data):
+        """
+        DEPRECATED: Use find_all_parts instead.
+        Kept for backward compatibility.
+        """
+        return FileHandler.find_all_parts(data)
     
     @staticmethod
     def _find_header_loc1_in_single_df(df, start_counter, df_index, serial_number=""):
@@ -249,11 +512,12 @@ class FileHandler:
                             excel_row = row_idx + 2
                             excel_ref = f'{excel_col}{excel_row}'
                             
-                            # Store position, DataFrame index, and serial number
+                            # Store position, DataFrame index, serial number, and format
                             positions[f'part-{part_counter}'] = {
                                 'position': excel_ref,
                                 'df_index': df_index,
-                                'serial_number': serial_number
+                                'serial_number': serial_number,
+                                'format': 'old'
                             }
                             part_counter += 1
                             logger.debug(f"Found header LOC1 at {excel_ref} with UNITS at index 2 in DataFrame {df_index}, serial: {serial_number}")
@@ -418,10 +682,11 @@ class FileHandler:
                 sheet[f'{col_letter}{row_str}'] = value
     
     @staticmethod
-    def process_part(data, part_positions_dict, part_name, workbook, start_row, is_first_part=False):
+    def process_part(data, part_positions_dict, part_name, workbook, start_row):
         """
-        Process measurements for a part from the specific DataFrame where it was found
-        Returns the next available row number
+        Process measurements for a part from the specific DataFrame where it was found.
+        Supports both old format (LOC1-based) and new format (OK-based).
+        Returns the next available row number.
         """
         if not isinstance(data, list):
             data = [data]
@@ -431,19 +696,28 @@ class FileHandler:
         
         part_info = part_positions_dict[part_name]
         
-        # Handle both old format (string) and new format (dict)
+        # Get format type and df_index
         if isinstance(part_info, dict):
-            df_index = part_info['df_index']
+            df_index = part_info.get('df_index', 0)
+            format_type = part_info.get('format', 'old')
+            is_very_first = part_info.get('is_very_first', False)
         else:
-            # Fallback for old format - process against all DataFrames (causes whitespace)
+            # Fallback for old format without format field
             df_index = 0
+            format_type = 'old'
+            is_very_first = (part_name == 'part-1')
         
         # Only process the specific DataFrame that contains this part
         if df_index < len(data):
             df = data[df_index]
             
-            # Extract measurements from the correct DataFrame
-            measurements = FileHandler.extract_all_measurements_for_part(df, part_positions_dict, part_name, is_first_part)
+            # Extract measurements based on format
+            if format_type == 'new':
+                logger.info(f"Processing {part_name} using NEW FORMAT logic")
+                measurements = FileHandler.extract_measurements_new_format(df, part_info, is_very_first)
+            else:
+                logger.info(f"Processing {part_name} using OLD FORMAT logic")
+                measurements = FileHandler.extract_all_measurements_for_part(df, part_positions_dict, part_name, is_very_first)
             
             # Write to all sheets
             for sheet in workbook.worksheets:
@@ -528,15 +802,16 @@ def main(data, output_path, progress_callback=None):
         logger.info("Starting processing...")
         
         if progress_callback:
-            progress_callback("Finding header LOC1 positions...")
+            progress_callback("Finding parts (detecting format)...")
         
-        part_position_dict = FileHandler.find_header_loc1_positions(data)
+        # Use new unified method that detects format
+        part_position_dict = FileHandler.find_all_parts(data)
         
         if not part_position_dict:
-            raise ValueError("No header LOC1 positions found in the input data")
+            raise ValueError("No parts found in the input data")
         
         total_parts = len(part_position_dict)
-        logger.info(f"Found {total_parts} header parts to process")
+        logger.info(f"Found {total_parts} parts to process")
         
         if progress_callback:
             progress_callback(f"Processing {total_parts} parts...")
@@ -545,14 +820,12 @@ def main(data, output_path, progress_callback=None):
             current_row = 9
             processed_parts = 0
             
-            for i, part_name in enumerate(part_position_dict.keys()):
+            for part_name in part_position_dict.keys():
                 logger.info(f"Processing {part_name}... ({processed_parts + 1}/{total_parts})")
                 
-                # Only include K, L, M for the very first part
-                is_first_part = (i == 0)
-                
+                # Process part (format is automatically detected in process_part)
                 current_row = FileHandler.process_part(
-                    data, part_position_dict, part_name, workbook, current_row, is_first_part
+                    data, part_position_dict, part_name, workbook, current_row
                 )
                 
                 processed_parts += 1
