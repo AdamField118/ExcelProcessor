@@ -1,20 +1,43 @@
 import os
 import sys
 import json
-from PyQt5.QtGui import QPixmap
+
+try:
+    from PyQt5.QtGui import QPixmap
+    QPIXMAP_AVAILABLE = True
+except ImportError:
+    QPIXMAP_AVAILABLE = False
+    QPixmap = None
 
 class ResourceManager:
-    def __init__(self):
+    def __init__(self, config_file="app_config.json"):
+        """
+        Initialize ResourceManager
+        
+        Args:
+            config_file (str): Name of the config file to use (default: "app_config.json")
+        """
         # Determine resource base path
         self.base_path = self._get_resource_base_path()
+        self.config_file = config_file  # Store the config filename
         self.logger = self._get_temp_logger()
         
     def _get_resource_base_path(self):
         """Determine the base path for resources"""
+        # Check if running as frozen executable
+        if getattr(sys, 'frozen', False):
+            # PyInstaller sets sys._MEIPASS to the temp directory where files are extracted
+            base_path = sys._MEIPASS
+            resources_path = os.path.join(base_path, 'resources')
+            if os.path.exists(resources_path):
+                return resources_path
+            return base_path
+        
+        # Running as normal Python script
         # Try relative path first
         relative_path = os.path.join(os.path.dirname(__file__), "..", "..", "resources")
         if os.path.exists(relative_path):
-            return relative_path
+            return os.path.abspath(relative_path)
         
         # Try absolute path for packaged app
         app_path = os.path.dirname(os.path.abspath(sys.argv[0]))
@@ -53,7 +76,7 @@ class ResourceManager:
     
     def get_config(self, key_path, default=None):
         """
-        Get configuration value from app_config.json
+        Get configuration value from the configured config file
         
         Args:
             key_path (str): Dot-separated path to configuration value
@@ -62,7 +85,7 @@ class ResourceManager:
         Returns:
             Config value or default
         """
-        config_path = os.path.join(self.base_path, "config", "app_config.json")
+        config_path = os.path.join(self.base_path, "config", self.config_file)
         
         if not os.path.exists(config_path):
             self.logger.warning(f"Config file not found: {config_path}")
@@ -95,6 +118,9 @@ class ResourceManager:
         Returns:
             QPixmap or None if not found
         """
+        if not QPIXMAP_AVAILABLE:
+            return None
+            
         icon_path = os.path.join(self.base_path, "icons", icon_name)
         
         if os.path.exists(icon_path):

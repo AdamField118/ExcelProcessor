@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QHBoxLayout
 from PyQt5.QtCore import Qt, QMimeData, QThread, pyqtSignal
 from PyQt5.QtGui import QDragEnterEvent, QDropEvent, QFont, QPalette, QIcon, QPixmap
 
-from src.core.excel_processor import ExcelProcessor
+from core.base_processor import BaseProcessor
 from src.core.file_handler import FileHandler
 from src.utils.validators import FileValidator
 from src.utils.logger import setup_logger, get_simple_logger

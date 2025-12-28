@@ -13,7 +13,7 @@ class FileValidator:
     
     @staticmethod
     def is_valid_data_file(file_path):
-        """Check if file is valid Excel OR CSV (maintains backward compatibility)"""
+        """Check if file is valid Excel OR CSV"""
         return FileValidator.is_valid_excel_file(file_path) or FileValidator.is_valid_csv_file(file_path)
     
     @staticmethod
@@ -36,27 +36,3 @@ class FileValidator:
     def validate_output_path(file_path):
         dir_path = os.path.dirname(file_path) or '.'
         return os.access(dir_path, os.W_OK)
-    
-    @staticmethod
-    def validate_string_inputs(string_values):
-        errors = []
-        required_fields = {
-            'part_name': "Part Name",
-            'revision_number': "Revision Number", 
-            'lot_number': "Lot Number",
-            'customer_p/n': "Customer P/N",
-            'customer_po': "Customer PO",
-            'measurement_units': "Measurement Units"
-        }
-
-        for key, label in required_fields.items():
-            value = string_values.get(key, '')
-            
-            # Check if value is not a string
-            if not isinstance(value, str):
-                errors.append(f"{label} must be a string")
-            # Check if the value is empty
-            elif not value.strip():
-                errors.append(f"{label} is required")
-        
-        return errors

@@ -1,0 +1,50 @@
+{
+  "application": {
+    "name": "ETS Processor",
+    "version": "1.0.0"
+  },
+  "window": {
+    "title": "ETS Processor",
+    "min_size": {
+      "width": 700,
+      "height": 600
+    }
+  },
+  "ui": {
+    "title": {
+      "text": "ETS Processor",
+      "font_size": 18,
+      "bold": true
+    },
+    "labels": {
+      "input_files": "Input Files",
+      "configuration": "Configuration",
+      "output": "Output Location"
+    },
+    "placeholders": {
+      "file_list": "Selected files will appear here..."
+    },
+    "output": {
+      "no_location_message": "No output location selected",
+      "button_text": "Choose Save Location"
+    },
+    "buttons": {
+      "process": {
+        "text": "Process Files",
+        "min_height": 45
+      }
+    },
+    "status_messages": {
+      "ready": "Ready - Select input files and configure settings",
+      "processing": "Processing files...",
+      "complete": "Processing complete!",
+      "failed": "Processing failed!"
+    }
+  },
+  "fonts": {
+    "main_label": {
+      "size": 12,
+      "bold": false
+    }
+  }
+}
