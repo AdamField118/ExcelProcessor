@@ -29,7 +29,7 @@ if getattr(sys, 'frozen', False):
         sys.stdout = original_stdout
         sys.stderr = original_stderr
 
-from src.gui.main_window import main
+from src.gui.unified_window import main
 
 if __name__ == "__main__":
     if getattr(sys, 'frozen', False):
